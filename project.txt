@@ -1,0 +1,33 @@
+I'm building a project for a hackathon focused on AI agents with persistent memory, using Hindsight (by Vectorize) as the required memory layer.
+
+PROJECT: Pentest/Security Audit Memory Agent
+
+Problem it solves:
+Security teams and freelance pentesters repeat the same manual work every engagement. They re-discover the same classes of vulnerabilities in similar codebases, forget which fixes actually held up over time, and have no memory of which weak patterns a specific client or team keeps reintroducing after supposedly fixing them. An agent with persistent memory across engagements can flag "this team has reintroduced this vulnerability class before" instead of treating every audit as a blank slate.
+
+What the agent should do:
+1. Ingest findings from a security scan or manual review (vulnerability type, severity, file/endpoint, description).
+2. Use Hindsight to retain each finding tied to a specific client/repo identity.
+3. On a new scan of the same client/repo, recall past findings and check:
+   - Was this exact vulnerability class flagged before?
+   - Was it marked fixed, and has it now reappeared (regression)?
+   - Are there recurring weak patterns specific to this codebase (e.g. repeated auth bypass logic, same injection-prone input handling)?
+4. Surface this as a clear before/after: first scan gives generic findings, later scans give findings enriched with "this is the third time this class has appeared here" style context.
+5. Track fix status over time and generate a short trend summary per client.
+
+Tech constraints:
+- Must use Hindsight (https://hindsight.vectorize.io/) for the memory layer, retain and recall calls should be clearly visible in the code and in the demo.
+- My stack: TypeScript, Next.js, PostgreSQL, pnpm. Prefer using these unless Hindsight strongly recommends otherwise.
+- Use realistic synthetic vulnerability data (real-sounding CWE categories, file paths, severities) rather than placeholder text, since fake-looking data hurts hackathon judging.
+- Keep scope tight: one clear workflow (scan ingestion -> memory-aware findings -> trend view), not a sprawling multi-feature app.
+
+What I need from you:
+1. A system architecture: how the app, database, and Hindsight memory calls fit together.
+2. The exact Hindsight retain/recall call structure I should use for this use case (what to retain per finding, what query to recall on a new scan).
+3. A realistic synthetic dataset structure for demo purposes (2-3 clients, multiple scan rounds each, some recurring vulnerabilities, some fixed-for-good).
+4. A step-by-step build plan I can follow in order, from schema to demo-ready UI.
+5. A suggested demo script showing the before/after memory moment clearly within 60-90 seconds.
+
+Judging criteria I'm optimizing for: innovation (30%), visible use of Hindsight memory (25%), clean technical implementation (20%), user experience (15%), real-world impact (10%). Make sure the plan keeps the memory layer visibly central, not buried in the backend.
+
+Give me the architecture and build plan first. Hold off on full code until I confirm the plan.
