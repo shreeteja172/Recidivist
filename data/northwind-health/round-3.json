@@ -1,0 +1,87 @@
+{
+  "client": "northwind-health",
+  "repo": "northwind/patient-portal",
+  "round": 3,
+  "scannedAt": "2026-06-08T09:30:00Z",
+  "tool": "semgrep + manual review",
+  "findings": [
+    {
+      "key": "NW-R3-01",
+      "ruleId": "typescript.lang.security.audit.sqli.tainted-sql-string",
+      "cwe": "CWE-89",
+      "cweName": "SQL Injection",
+      "severity": "high",
+      "title": "User-controlled groupBy reaches raw GROUP BY clause",
+      "file": "src/app/api/reports/export/route.ts",
+      "line": 61,
+      "endpoint": "GET /api/reports/export",
+      "sink": "buildQuery() in src/lib/db/queryBuilder.ts",
+      "description": "The groupBy query parameter of the CSV export is forwarded to buildQuery(), which concatenates it into the GROUP BY clause. A clinic administrator can alter the export query and pull rows from other clinics' appointment and billing tables."
+    },
+    {
+      "key": "NW-R3-02",
+      "ruleId": "typescript.nextjs.security.audit.missing-content-security-policy",
+      "cwe": "CWE-693",
+      "cweName": "Protection Mechanism Failure (missing CSP)",
+      "severity": "medium",
+      "title": "No Content-Security-Policy header configured",
+      "file": "next.config.ts",
+      "line": 1,
+      "endpoint": null,
+      "sink": null,
+      "description": "next.config.ts defines no headers() block, so every page is served without a Content-Security-Policy. Any script injection in the portal would run with full access to the patient session."
+    },
+    {
+      "key": "NW-R3-03",
+      "ruleId": "manual-review",
+      "cwe": "CWE-613",
+      "cweName": "Insufficient Session Expiration",
+      "severity": "low",
+      "title": "Sessions never expire server-side",
+      "file": "src/lib/auth/session.ts",
+      "line": 52,
+      "endpoint": null,
+      "sink": null,
+      "description": "Session records have no expiry and are not revoked when a patient changes their password, so a stolen session stays valid indefinitely."
+    },
+    {
+      "key": "NW-R3-04",
+      "ruleId": "typescript.lang.security.audit.ssrf-fetch",
+      "cwe": "CWE-918",
+      "cweName": "Server-Side Request Forgery (SSRF)",
+      "severity": "medium",
+      "title": "FHIR import fetches arbitrary server URLs",
+      "file": "src/app/api/integrations/fhir/route.ts",
+      "line": 33,
+      "endpoint": "POST /api/integrations/fhir",
+      "sink": null,
+      "description": "The FHIR import endpoint fetches a server URL supplied by the clinic admin without restricting the destination. It can be pointed at internal services such as the cloud metadata endpoint."
+    },
+    {
+      "key": "NW-R3-05",
+      "ruleId": "typescript.lang.security.audit.detect-redos",
+      "cwe": "CWE-1333",
+      "cweName": "Inefficient Regular Expression Complexity (ReDoS)",
+      "severity": "low",
+      "title": "Phone number regex vulnerable to catastrophic backtracking",
+      "file": "src/lib/validators/phone.ts",
+      "line": 9,
+      "endpoint": null,
+      "sink": null,
+      "description": "The phone validator uses a nested-quantifier pattern that backtracks exponentially on long inputs. A single crafted sign-up request can pin a server CPU for several seconds."
+    },
+    {
+      "key": "NW-R3-06",
+      "ruleId": "manual-review",
+      "cwe": "CWE-200",
+      "cweName": "Exposure of Sensitive Information to an Unauthorized Actor",
+      "severity": "medium",
+      "title": "Appointment API returns the provider's internal notes",
+      "file": "src/app/api/appointments/[id]/route.ts",
+      "line": 27,
+      "endpoint": "GET /api/appointments/:id",
+      "sink": null,
+      "description": "The appointment response serializes the full database row, including the provider's internal notes field that the UI never displays. Patients can read clinician notes by inspecting the API response."
+    }
+  ]
+}

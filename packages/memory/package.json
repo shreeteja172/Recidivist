@@ -1,0 +1,20 @@
+{
+  "name": "@recidivist/memory",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@recidivist/db": "workspace:*",
+    "@vectorize-io/hindsight-client": "^0.10.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "typescript": "^5"
+  }
+}

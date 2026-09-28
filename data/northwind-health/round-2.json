@@ -1,0 +1,74 @@
+{
+  "client": "northwind-health",
+  "repo": "northwind/patient-portal",
+  "round": 2,
+  "scannedAt": "2026-03-09T09:30:00Z",
+  "tool": "semgrep + manual review",
+  "findings": [
+    {
+      "key": "NW-R2-01",
+      "ruleId": "typescript.nextjs.security.audit.missing-content-security-policy",
+      "cwe": "CWE-693",
+      "cweName": "Protection Mechanism Failure (missing CSP)",
+      "severity": "medium",
+      "title": "No Content-Security-Policy header configured",
+      "file": "next.config.ts",
+      "line": 1,
+      "endpoint": null,
+      "sink": null,
+      "description": "next.config.ts defines no headers() block, so every page is served without a Content-Security-Policy. Any script injection in the portal would run with full access to the patient session."
+    },
+    {
+      "key": "NW-R2-02",
+      "ruleId": "manual-review",
+      "cwe": "CWE-770",
+      "cweName": "Allocation of Resources Without Limits or Throttling",
+      "severity": "medium",
+      "title": "No rate limit on the one-time passcode endpoint",
+      "file": "src/app/api/auth/otp/route.ts",
+      "line": 15,
+      "endpoint": "POST /api/auth/otp",
+      "sink": null,
+      "description": "The endpoint that verifies six-digit SMS passcodes has no attempt limit or throttling. An attacker can keep guessing codes for a patient's phone number until one is accepted."
+    },
+    {
+      "key": "NW-R2-03",
+      "ruleId": "typescript.lang.security.audit.sensitive-data-in-logs",
+      "cwe": "CWE-532",
+      "cweName": "Insertion of Sensitive Information into Log File",
+      "severity": "medium",
+      "title": "Patient identifiers written to application logs",
+      "file": "src/lib/logger.ts",
+      "line": 28,
+      "endpoint": null,
+      "sink": null,
+      "description": "The request logger serializes full request bodies, including patient names, dates of birth and insurance member ids, into logs shipped to a third-party log service. This puts PHI outside the HIPAA boundary."
+    },
+    {
+      "key": "NW-R2-04",
+      "ruleId": "typescript.lang.security.audit.unrestricted-file-upload",
+      "cwe": "CWE-434",
+      "cweName": "Unrestricted Upload of File with Dangerous Type",
+      "severity": "high",
+      "title": "Unrestricted file type on insurance document upload",
+      "file": "src/app/api/documents/upload/route.ts",
+      "line": 40,
+      "endpoint": "POST /api/documents/upload",
+      "sink": null,
+      "description": "Uploaded insurance documents are stored under their original filename and content type without validating either. HTML and SVG files are later served from the portal's own origin, so an uploaded file can run script in other users' sessions."
+    },
+    {
+      "key": "NW-R2-05",
+      "ruleId": "manual-review",
+      "cwe": "CWE-613",
+      "cweName": "Insufficient Session Expiration",
+      "severity": "low",
+      "title": "Sessions never expire server-side",
+      "file": "src/lib/auth/session.ts",
+      "line": 52,
+      "endpoint": null,
+      "sink": null,
+      "description": "Session records have no expiry and are not revoked when a patient changes their password, so a stolen session stays valid indefinitely."
+    }
+  ]
+}

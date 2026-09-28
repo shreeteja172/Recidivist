@@ -1,0 +1,113 @@
+{
+  "client": "northwind-health",
+  "repo": "northwind/patient-portal",
+  "round": 1,
+  "scannedAt": "2025-12-08T09:30:00Z",
+  "tool": "semgrep + manual review",
+  "findings": [
+    {
+      "key": "NW-R1-01",
+      "ruleId": "typescript.lang.security.audit.sqli.tainted-sql-string",
+      "cwe": "CWE-89",
+      "cweName": "SQL Injection",
+      "severity": "high",
+      "title": "User-controlled sortBy reaches raw ORDER BY clause",
+      "file": "src/app/api/patients/search/route.ts",
+      "line": 42,
+      "endpoint": "GET /api/patients/search",
+      "sink": "buildQuery() in src/lib/db/queryBuilder.ts",
+      "description": "The sortBy query parameter is passed unvalidated to buildQuery(), which concatenates it into the ORDER BY clause of the patient search query. Column names cannot be bound as query parameters, so the caller controls part of the SQL statement and can read patient records outside their own clinic."
+    },
+    {
+      "key": "NW-R1-02",
+      "ruleId": "manual-review",
+      "cwe": "CWE-639",
+      "cweName": "Authorization Bypass Through User-Controlled Key (IDOR)",
+      "severity": "high",
+      "title": "Medical records fetched by id without an ownership check",
+      "file": "src/app/api/records/[id]/route.ts",
+      "line": 18,
+      "endpoint": "GET /api/records/:id",
+      "sink": null,
+      "description": "The handler loads a medical record by its numeric id and returns it to any authenticated user. Record ids are sequential, so a patient can read other patients' visit notes and lab results by changing the id in the URL."
+    },
+    {
+      "key": "NW-R1-03",
+      "ruleId": "generic.secrets.security.detected-stripe-api-key",
+      "cwe": "CWE-798",
+      "cweName": "Use of Hard-coded Credentials",
+      "severity": "critical",
+      "title": "Stripe live secret key hard-coded in source",
+      "file": "src/lib/payments/stripe.ts",
+      "line": 6,
+      "endpoint": null,
+      "sink": null,
+      "description": "A Stripe live secret key (sk_live_…redacted) is assigned to a constant in the payments client and committed to the repository. Anyone with read access to the repository or its history can create charges and refunds on the production Stripe account."
+    },
+    {
+      "key": "NW-R1-04",
+      "ruleId": "typescript.nextjs.security.audit.missing-content-security-policy",
+      "cwe": "CWE-693",
+      "cweName": "Protection Mechanism Failure (missing CSP)",
+      "severity": "medium",
+      "title": "No Content-Security-Policy header configured",
+      "file": "next.config.ts",
+      "line": 1,
+      "endpoint": null,
+      "sink": null,
+      "description": "next.config.ts defines no headers() block, so every page is served without a Content-Security-Policy. Any script injection in the portal would run with full access to the patient session."
+    },
+    {
+      "key": "NW-R1-05",
+      "ruleId": "typescript.lang.security.audit.error-stack-exposed",
+      "cwe": "CWE-209",
+      "cweName": "Information Exposure Through an Error Message",
+      "severity": "medium",
+      "title": "Stack traces returned in login error responses",
+      "file": "src/app/api/auth/login/route.ts",
+      "line": 57,
+      "endpoint": "POST /api/auth/login",
+      "sink": null,
+      "description": "The catch block returns error.stack in the JSON response when authentication fails unexpectedly. The trace reveals internal file paths, the ORM version and database hostnames."
+    },
+    {
+      "key": "NW-R1-06",
+      "ruleId": "typescript.nextjs.security.audit.open-redirect",
+      "cwe": "CWE-601",
+      "cweName": "Open Redirect",
+      "severity": "medium",
+      "title": "Open redirect via returnTo parameter after sign-in",
+      "file": "src/app/auth/callback/route.ts",
+      "line": 23,
+      "endpoint": "GET /auth/callback",
+      "sink": null,
+      "description": "After a successful sign-in the callback redirects to the returnTo query parameter without checking that it points to the portal's own origin. Phishing links can bounce patients through the real login page to a look-alike site."
+    },
+    {
+      "key": "NW-R1-07",
+      "ruleId": "dependency-audit.npm.vulnerable-version",
+      "cwe": "CWE-1395",
+      "cweName": "Dependency on Vulnerable Third-Party Component",
+      "severity": "low",
+      "title": "Outdated jsonwebtoken with published advisories",
+      "file": "package.json",
+      "line": 31,
+      "endpoint": null,
+      "sink": null,
+      "description": "package.json pins jsonwebtoken 8.5.1, which has published advisories affecting signature verification defaults. The session library relies on it for patient tokens."
+    },
+    {
+      "key": "NW-R1-08",
+      "ruleId": "typescript.lang.security.audit.cookie-missing-httponly",
+      "cwe": "CWE-1004",
+      "cweName": "Sensitive Cookie Without HttpOnly Flag",
+      "severity": "low",
+      "title": "Session cookie set without HttpOnly",
+      "file": "src/lib/auth/session.ts",
+      "line": 34,
+      "endpoint": null,
+      "sink": null,
+      "description": "The nw_session cookie is created without the HttpOnly flag, so any script running on the page can read the session token."
+    }
+  ]
+}

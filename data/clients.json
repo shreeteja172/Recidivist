@@ -1,0 +1,26 @@
+[
+  {
+    "slug": "northwind-health",
+    "name": "Northwind Health",
+    "industry": "Healthcare · patient portal",
+    "repo": "northwind/patient-portal",
+    "stack": "Next.js 15 + PostgreSQL",
+    "prefix": "NW"
+  },
+  {
+    "slug": "ledgerly",
+    "name": "Ledgerly",
+    "industry": "Fintech · B2B payments",
+    "repo": "ledgerly/payments-api",
+    "stack": "Django 5 + PostgreSQL + Celery",
+    "prefix": "LG"
+  },
+  {
+    "slug": "brightpath",
+    "name": "Brightpath Learning",
+    "industry": "EdTech · learning platform",
+    "repo": "brightpath/lms-core",
+    "stack": "Spring Boot 3 + Thymeleaf + PostgreSQL",
+    "prefix": "BP"
+  }
+]

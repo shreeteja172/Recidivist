@@ -1,0 +1,77 @@
+[
+  {
+    "key": "NW-R1-01",
+    "fixedAt": "2026-01-20",
+    "note": "Added an allow-list for sortBy inside the patients search handler. The shared buildQuery() helper in src/lib/db/queryBuilder.ts was not changed and still concatenates identifiers."
+  },
+  {
+    "key": "NW-R1-02",
+    "fixedAt": "2026-02-10",
+    "note": "Added requireRecordOwner() middleware in src/middleware/authz.ts and applied it to every /api/records/* route; ownership is checked against the session's patientId."
+  },
+  {
+    "key": "NW-R1-03",
+    "fixedAt": "2026-02-03",
+    "note": "Moved the key to the STRIPE_SECRET_KEY environment variable, rotated the live key in Stripe and purged it from git history. No secret scanning was added to CI."
+  },
+  {
+    "key": "NW-R1-05",
+    "fixedAt": "2026-01-14",
+    "note": "Login errors now return a generic message; stack traces are only logged server-side."
+  },
+  {
+    "key": "NW-R1-06",
+    "fixedAt": "2026-01-14",
+    "note": "returnTo is now validated against an allow-list of internal paths."
+  },
+  {
+    "key": "NW-R1-07",
+    "fixedAt": "2026-02-20",
+    "note": "Upgraded jsonwebtoken to 9.0.2."
+  },
+  {
+    "key": "NW-R1-08",
+    "fixedAt": "2026-02-20",
+    "note": "The session cookie is now set with HttpOnly, Secure and SameSite=Lax."
+  },
+  {
+    "key": "NW-R2-02",
+    "fixedAt": "2026-04-08",
+    "note": "Added per-number and per-IP attempt limits on OTP verification, with a 15-minute lockout after five failed codes."
+  },
+  {
+    "key": "NW-R2-03",
+    "fixedAt": "2026-04-15",
+    "note": "The request logger now redacts bodies and only records route, status code and a request id."
+  },
+  {
+    "key": "NW-R2-04",
+    "fixedAt": "2026-05-06",
+    "note": "Uploads are restricted to PDF, PNG and JPEG by file signature, renamed to random ids and served from a separate storage domain as attachments."
+  },
+  {
+    "key": "NW-R3-01",
+    "fixedAt": "2026-07-08",
+    "note": "Allow-listed groupBy in the reports export handler. buildQuery() still concatenates identifiers for every other caller."
+  },
+  {
+    "key": "NW-R3-03",
+    "fixedAt": "2026-07-15",
+    "note": "Sessions now expire after 12 hours of inactivity and are revoked on password change."
+  },
+  {
+    "key": "NW-R3-04",
+    "fixedAt": "2026-07-20",
+    "note": "FHIR server URLs must match an allow-list of registered EHR vendors; private address ranges are rejected."
+  },
+  {
+    "key": "NW-R3-05",
+    "fixedAt": "2026-06-30",
+    "note": "Replaced the phone regex with libphonenumber-js parsing."
+  },
+  {
+    "key": "NW-R3-06",
+    "fixedAt": "2026-07-02",
+    "note": "The appointment endpoint now maps rows through a response DTO that omits internal notes."
+  }
+]

@@ -1,0 +1,100 @@
+{
+  "client": "northwind-health",
+  "repo": "northwind/patient-portal",
+  "round": 4,
+  "scannedAt": "2026-09-14T09:30:00Z",
+  "tool": "semgrep + manual review",
+  "findings": [
+    {
+      "key": "NW-R4-01",
+      "ruleId": "typescript.lang.security.audit.sqli.tainted-sql-string",
+      "cwe": "CWE-89",
+      "cweName": "SQL Injection",
+      "severity": "high",
+      "title": "User-controlled sortBy reaches raw ORDER BY clause",
+      "file": "src/app/api/appointments/filter/route.ts",
+      "line": 38,
+      "endpoint": "GET /api/appointments/filter",
+      "sink": "buildQuery() in src/lib/db/queryBuilder.ts",
+      "description": "The new appointment filter endpoint passes the sortBy query parameter straight to buildQuery(), which concatenates it into the ORDER BY clause. Any logged-in patient can alter the query and read appointments that belong to other patients."
+    },
+    {
+      "key": "NW-R4-02",
+      "ruleId": "generic.secrets.security.detected-stripe-api-key",
+      "cwe": "CWE-798",
+      "cweName": "Use of Hard-coded Credentials",
+      "severity": "critical",
+      "title": "Stripe live secret key hard-coded in source",
+      "file": "src/lib/payments/stripe.ts",
+      "line": 6,
+      "endpoint": null,
+      "sink": null,
+      "description": "A Stripe live secret key (sk_live_…redacted) is assigned to a constant in the payments client, introduced in commit a41c9e2 \"fix local checkout\". Anyone with repository access can create charges and refunds on the production Stripe account."
+    },
+    {
+      "key": "NW-R4-03",
+      "ruleId": "typescript.nextjs.security.audit.missing-content-security-policy",
+      "cwe": "CWE-693",
+      "cweName": "Protection Mechanism Failure (missing CSP)",
+      "severity": "medium",
+      "title": "No Content-Security-Policy header configured",
+      "file": "next.config.ts",
+      "line": 1,
+      "endpoint": null,
+      "sink": null,
+      "description": "next.config.ts defines no headers() block, so every page is served without a Content-Security-Policy. Any script injection in the portal would run with full access to the patient session."
+    },
+    {
+      "key": "NW-R4-04",
+      "ruleId": "typescript.nextjs.security.audit.cors-reflected-origin",
+      "cwe": "CWE-942",
+      "cweName": "Permissive Cross-domain Policy with Untrusted Domains",
+      "severity": "medium",
+      "title": "CORS reflects any origin with credentials allowed",
+      "file": "src/middleware.ts",
+      "line": 12,
+      "endpoint": null,
+      "sink": null,
+      "description": "The middleware copies the request Origin header into Access-Control-Allow-Origin and sets Access-Control-Allow-Credentials to true. Any website can make authenticated API calls on behalf of a logged-in patient and read the responses."
+    },
+    {
+      "key": "NW-R4-05",
+      "ruleId": "typescript.lang.security.audit.insecure-random",
+      "cwe": "CWE-338",
+      "cweName": "Use of Cryptographically Weak PRNG",
+      "severity": "medium",
+      "title": "Password reset tokens generated with Math.random()",
+      "file": "src/lib/crypto/tokens.ts",
+      "line": 14,
+      "endpoint": null,
+      "sink": null,
+      "description": "Password reset tokens are built from Math.random(), which is not a cryptographically secure generator. Tokens issued close together in time can be predicted."
+    },
+    {
+      "key": "NW-R4-06",
+      "ruleId": "manual-review",
+      "cwe": "CWE-307",
+      "cweName": "Improper Restriction of Excessive Authentication Attempts",
+      "severity": "medium",
+      "title": "No lockout on password login",
+      "file": "src/app/api/auth/login/route.ts",
+      "line": 22,
+      "endpoint": "POST /api/auth/login",
+      "sink": null,
+      "description": "The password login endpoint has no attempt counter or delay, unlike the OTP endpoint. Credential-stuffing lists can be tried against patient accounts at full speed."
+    },
+    {
+      "key": "NW-R4-07",
+      "ruleId": "manual-review",
+      "cwe": "CWE-352",
+      "cweName": "Cross-Site Request Forgery (CSRF)",
+      "severity": "medium",
+      "title": "Profile update accepts cross-site requests",
+      "file": "src/app/api/profile/route.ts",
+      "line": 20,
+      "endpoint": "PUT /api/profile",
+      "sink": null,
+      "description": "The profile update route relies only on the session cookie and checks neither the Origin header nor a CSRF token, and the cookie's SameSite attribute was set to None for an embedded booking widget. A malicious page can change a logged-in patient's email address."
+    }
+  ]
+}
