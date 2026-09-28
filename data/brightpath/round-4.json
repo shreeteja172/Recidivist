@@ -1,0 +1,87 @@
+{
+  "client": "brightpath",
+  "repo": "brightpath/lms-core",
+  "round": 4,
+  "scannedAt": "2026-09-14T09:30:00Z",
+  "tool": "semgrep + manual review",
+  "findings": [
+    {
+      "key": "BP-R4-01",
+      "ruleId": "html.thymeleaf.security.audit.unescaped-th-utext",
+      "cwe": "CWE-79",
+      "cweName": "Cross-site Scripting (XSS)",
+      "severity": "high",
+      "title": "Course announcements rendered unescaped with th:utext",
+      "file": "src/main/resources/templates/announcements/post.html",
+      "line": 27,
+      "endpoint": "GET /courses/{id}/announcements",
+      "sink": "th:utext rendering of rich-text fields (no shared HTML sanitizer)",
+      "description": "Announcement bodies are rendered with th:utext. Any instructor or co-teacher account can publish markup that runs script for every student enrolled in the course."
+    },
+    {
+      "key": "BP-R4-02",
+      "ruleId": "java.spring.security.audit.spring-csrf-disabled",
+      "cwe": "CWE-352",
+      "cweName": "Cross-Site Request Forgery (CSRF)",
+      "severity": "high",
+      "title": "CSRF protection disabled globally",
+      "file": "src/main/java/com/brightpath/lms/config/SecurityConfig.java",
+      "line": 41,
+      "endpoint": null,
+      "sink": null,
+      "description": "SecurityConfig disables CSRF protection for all routes with http.csrf(csrf -> csrf.disable()). Browser sessions for grade submission and enrollment changes are exposed to cross-site request forgery."
+    },
+    {
+      "key": "BP-R4-03",
+      "ruleId": "java.spring.security.audit.long-session-timeout",
+      "cwe": "CWE-613",
+      "cweName": "Insufficient Session Expiration",
+      "severity": "low",
+      "title": "Sessions stay valid for 30 days",
+      "file": "src/main/resources/application.yml",
+      "line": 35,
+      "endpoint": null,
+      "sink": null,
+      "description": "server.servlet.session.timeout is set to 30d, so sessions on shared lab computers stay valid for weeks."
+    },
+    {
+      "key": "BP-R4-04",
+      "ruleId": "java.spring.security.audit.exception-message-exposed",
+      "cwe": "CWE-209",
+      "cweName": "Information Exposure Through an Error Message",
+      "severity": "medium",
+      "title": "API errors return raw exception messages",
+      "file": "src/main/java/com/brightpath/lms/api/GlobalExceptionHandler.java",
+      "line": 22,
+      "endpoint": null,
+      "sink": null,
+      "description": "The global exception handler returns ex.getMessage() to API clients, which includes SQL constraint names and internal hostnames."
+    },
+    {
+      "key": "BP-R4-05",
+      "ruleId": "java.lang.security.audit.detect-redos",
+      "cwe": "CWE-1333",
+      "cweName": "Inefficient Regular Expression Complexity (ReDoS)",
+      "severity": "low",
+      "title": "Email regex vulnerable to catastrophic backtracking",
+      "file": "src/main/java/com/brightpath/lms/util/EmailValidator.java",
+      "line": 15,
+      "endpoint": null,
+      "sink": null,
+      "description": "The sign-up email validator uses a nested-quantifier pattern that backtracks exponentially on long inputs, so one crafted request can tie up a request thread."
+    },
+    {
+      "key": "BP-R4-06",
+      "ruleId": "manual-review",
+      "cwe": "CWE-862",
+      "cweName": "Missing Authorization",
+      "severity": "medium",
+      "title": "Any logged-in user can remove students from a course",
+      "file": "src/main/java/com/brightpath/lms/course/CourseAdminController.java",
+      "line": 58,
+      "endpoint": "DELETE /api/courses/{id}/enrollments/{userId}",
+      "sink": null,
+      "description": "The endpoint that removes a student from a course only checks that the caller is logged in, not that they teach the course."
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "client": "ledgerly",
+  "repo": "ledgerly/payments-api",
+  "round": 4,
+  "scannedAt": "2026-09-14T09:30:00Z",
+  "tool": "semgrep + manual review",
+  "findings": [
+    {
+      "key": "LG-R4-01",
+      "ruleId": "python.lang.security.deserialization.avoid-pyyaml-load",
+      "cwe": "CWE-502",
+      "cweName": "Deserialization of Untrusted Data",
+      "severity": "critical",
+      "title": "Statement files parsed with unsafe yaml.load",
+      "file": "reconciliation/importers/statement_parser.py",
+      "line": 58,
+      "endpoint": "POST /v1/reconciliation/imports",
+      "sink": "yaml.load() in reconciliation/importers",
+      "description": "parse_statement() calls yaml.load with yaml.Loader on uploaded bank statements. This module took over bank feed parsing in the August importer refactor. A crafted statement file can instantiate arbitrary Python objects in the import worker, which leads to code execution."
+    },
+    {
+      "key": "LG-R4-02",
+      "ruleId": "python.lang.security.audit.sensitive-data-in-logs",
+      "cwe": "CWE-532",
+      "cweName": "Insertion of Sensitive Information into Log File",
+      "severity": "low",
+      "title": "Payout webhook payloads logged in full",
+      "file": "payments/tasks.py",
+      "line": 88,
+      "endpoint": null,
+      "sink": null,
+      "description": "The payout retry task logs the full webhook payload at INFO level, including beneficiary names and account suffixes."
+    },
+    {
+      "key": "LG-R4-03",
+      "ruleId": "manual-review",
+      "cwe": "CWE-400",
+      "cweName": "Uncontrolled Resource Consumption",
+      "severity": "medium",
+      "title": "Unbounded webhook retry queue",
+      "file": "payments/webhooks/dispatch.py",
+      "line": 120,
+      "endpoint": null,
+      "sink": null,
+      "description": "Failed webhook deliveries are retried forever with no cap, so one unreachable customer endpoint can fill the Celery queue and delay payouts for every customer."
+    }
+  ]
+}

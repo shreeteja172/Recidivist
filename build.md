@@ -13,7 +13,7 @@ Security teams and freelance pentesters audit the same clients again and again. 
 
 | Without memory (what every scanner shows) | With Recidivist |
 |---|---|
-| `HIGH` SQL Injection in `src/api/appointments/filter.ts` | 🟠 **RECURRING · 3rd offense.** Same root cause as Dec 2025 and Jun 2026: user input reaches the shared `buildQuery()` helper. Each time the team fixed only that one endpoint. **Durable fix:** patch `buildQuery()` itself. |
+| `HIGH` SQL Injection in `src/app/api/appointments/filter/route.ts` | 🟠 **RECURRING · 3rd offense.** Same root cause as Dec 2025 and Jun 2026: user input reaches the shared `buildQuery()` helper. Each time the team fixed only that one endpoint. **Durable fix:** patch `buildQuery()` itself. |
 
 ### The core idea (what makes this more than a database JOIN)
 
@@ -42,7 +42,9 @@ Recidivist remembers **root causes and how things were fixed**, not just file na
 
 | Layer | Choice |
 |---|---|
-| App | Next.js (App Router) + TypeScript, pnpm |
+| Monorepo | Turborepo + pnpm workspaces |
+| Backend | Hono on Node (`apps/api`), run with tsx |
+| Frontend | Next.js 16 (App Router) + TypeScript (`apps/web`) |
 | UI | Tailwind + shadcn/ui, Recharts for the trend chart |
 | Database | PostgreSQL + Drizzle ORM |
 | Validation | zod (scan JSON input) |
@@ -117,21 +119,39 @@ A normal scanner calls all three "new" because the file is different each time.
 ## 4. Architecture
 
 ```
-Next.js (App Router)
- ├─ /                          clients list
- ├─ /clients/[slug]            trend chart (Postgres) + security profile (Hindsight mental model)
- ├─ /scans/[id]                findings with memory context + Memory Trace drawer
- ├─ POST /api/scans            ingest → kicks off pipeline
- ├─ GET  /api/scans/[id]       status + findings + memory_calls (UI polls every 1s)
- └─ POST /api/findings/[id]/fix  mark fixed → retain fix note
-        │                                    │
-   PostgreSQL (Drizzle)                 lib/memory.ts  ← the ONLY file that calls Hindsight
-   clients, repos, scans,                 retainFinding · retainFix · recallHistory
-   findings, memory_calls                 reflectOnScan · getClientProfile
-                                                 │
-                                    Hindsight (Docker :8888 API / :9999 UI, or Cloud)
-                                    one memory bank per client: client-<slug>
+apps/web  (Next.js, :3100)           screens only; calls the API over HTTP
+    │
+apps/api  (Hono, :4000)              HTTP routes + runs the scan pipeline in the background
+    │
+packages/core                        scan schema, ingest, pipeline, verdict rules, read queries
+    │                 │
+packages/db           packages/memory  ← the ONLY package that calls Hindsight
+Postgres (:5433)        setupBank · recallHistory · reflectOnScan
+clients, repos, scans,  retainFindings · retainFixes · ensureProfile/getProfile
+findings, memory_calls  every call logged to memory_calls
+                              │
+                   Hindsight (Docker :8888 API / :9999 UI, or Cloud)
+                   one memory bank per client: client-<slug>
 ```
+
+### API routes (`apps/api`)
+
+| Method | Route | What it does |
+|---|---|---|
+| GET | `/health` | Postgres + Hindsight status |
+| GET | `/clients` | Home page cards (open findings, latest scan, trend) |
+| GET | `/clients/:slug?profile=1` | Trend per round, rap sheet (repeat CWEs), security profile |
+| GET | `/clients/:slug/profile` | Security profile only (Hindsight mental model) |
+| POST | `/clients/:slug/profile/refresh` | Ask Hindsight to refresh the profile |
+| GET | `/clients/:slug/memory-calls` | Memory Trace for a client |
+| POST | `/scans` | Upload scan JSON → 202 `{scanId}`; pipeline runs in background |
+| GET | `/scans/:id` | Stage, progress (recall/reflect/retain counts), findings with verdicts (poll every 1s) |
+| GET | `/scans/:id/memory-calls` | Memory Trace for a scan |
+| POST | `/scans/:id/rerun` | Re-run the pipeline (e.g. after Hindsight was down) |
+| DELETE | `/scans/:id` | Delete scan + forget its memories (demo rehearsal) |
+| POST | `/findings/:id/fix` | `{note, fixedAt?}` → mark fixed + retain fix note |
+| GET | `/samples/:client/:round` | Sample scan JSON for the upload screen |
+| GET | `/memory-calls` | Latest Hindsight calls across all clients |
 
 ### Who owns what
 
@@ -144,20 +164,21 @@ Next.js (App Router)
 Bank id: `client-northwind-health`, `client-ledgerly`, `client-brightpath`.
 This guarantees one client's findings never leak into another client's report. That's a real confidentiality requirement for pentesters and worth saying in the pitch.
 
-### Scan pipeline (`lib/pipeline.ts`)
+### Scan pipeline (`packages/core/src/pipeline.ts`)
 
 ```
-1. Validate JSON (zod) → insert scan + findings into Postgres (status = analyzing)
-2. RECALL   one call per finding, in parallel        → store recall results per finding
-3. REFLECT  one call for the whole scan              → verdict per finding + scan brief
-4. Save verdicts to findings table (status = done)
-5. RETAIN   one call per finding (tag with repo)
-6. Security profile (mental model) refreshes itself after consolidation
+1. Validate JSON (zod) → insert scan + findings into Postgres            stage: saved
+2. RECALL   one call per finding, 4 in parallel → memory evidence       stage: recalling
+3. REFLECT  one call for the whole scan (skipped on a first scan)       stage: reflecting
+4. DECIDE   exact fingerprint match in Postgres → regression/persistent
+            otherwise Hindsight's verdict, backed by real earlier findings
+5. RETAIN   one batch call with all findings (tag: repo)                stage: retaining
+6. Security profile (mental model) refreshes itself after consolidation stage: done
 ```
 
 ⚠️ **Recall must happen BEFORE retain.** Otherwise every finding just finds itself in memory.
 
-Run the pipeline in the background (Next.js `after()` or fire-and-forget in the Node runtime). The UI polls `GET /api/scans/[id]`. Run locally with `next start` for the demo, not on serverless.
+The API runs the pipeline in the background and the UI polls `GET /scans/:id`. If Hindsight fails, verdicts fall back to Postgres history and `verdictSource` says `fallback`, so the demo never shows an empty screen.
 
 ---
 
@@ -165,70 +186,63 @@ Run the pipeline in the background (Next.js `after()` or fire-and-forget in the 
 
 ```
 .
-├─ app/
-│  ├─ page.tsx                          # 1. Clients list
-│  ├─ clients/[slug]/page.tsx           # 2. Client page
-│  ├─ clients/[slug]/upload/page.tsx    # 3. Upload scan
-│  ├─ scans/[id]/page.tsx               # 4+5. Analyzing + results
-│  └─ api/
-│     ├─ scans/route.ts                 # POST ingest
-│     ├─ scans/[id]/route.ts            # GET status/results
-│     └─ findings/[id]/fix/route.ts     # POST mark fixed
-├─ components/
-│  ├─ finding-card.tsx
-│  ├─ memory-trace-drawer.tsx
-│  ├─ memory-toggle.tsx
-│  ├─ trend-chart.tsx
-│  └─ security-profile.tsx
-├─ lib/
-│  ├─ hindsight.ts                      # client + logging wrapper → memory_calls
-│  ├─ memory.ts                         # retain / recall / reflect / mental model
-│  ├─ pipeline.ts                       # scan pipeline (section 4)
-│  ├─ scan-schema.ts                    # zod schema for scan JSON
-│  └─ db/{schema.ts,index.ts}
+├─ apps/
+│  ├─ api/                              # Hono backend (built)
+│  │  └─ src/
+│  │     ├─ app.ts                      # all HTTP routes
+│  │     ├─ index.ts                    # server on :4000
+│  │     └─ scripts/
+│  │        ├─ seed.ts                  # replay rounds 1–3 + fixes through the real pipeline
+│  │        ├─ upload.ts                # upload a sample scan via the API, print verdicts
+│  │        └─ check-data.ts            # validate data/ and preview exact-match verdicts
+│  └─ web/                              # Next.js frontend (tomorrow)
+├─ packages/
+│  ├─ db/                               # Drizzle schema + lazy Postgres client
+│  ├─ memory/                           # ALL Hindsight calls + memory_calls logging
+│  │  └─ src/{client,trace,bank,operations}.ts
+│  └─ core/                             # scan schema, ingest, pipeline, verdicts, queries
+│     └─ src/verdicts.test.ts           # unit tests for the verdict rules
 ├─ data/
+│  ├─ clients.json
 │  ├─ northwind-health/{round-1..4.json, fixes.json}
 │  ├─ ledgerly/{round-1..4.json, fixes.json}
 │  └─ brightpath/{round-1..4.json, fixes.json}
-├─ scripts/
-│  ├─ setup-banks.ts                    # create banks, config, directives, mental models
-│  └─ seed.ts                           # replay rounds 1–3 + fixes through the real pipeline
-├─ docker-compose.yml                   # postgres + hindsight
+├─ docker-compose.yml                   # postgres (:5433) + hindsight (:8888, :9999)
+├─ turbo.json
 └─ .env.example
 ```
 
 ### Environment
 
-```
-DATABASE_URL=postgres://recidivist:recidivist@localhost:5432/recidivist
-HINDSIGHT_BASE_URL=http://localhost:8888
-HINDSIGHT_API_KEY=                     # only needed for Hindsight Cloud
-```
-
-The Hindsight container needs `HINDSIGHT_API_LLM_PROVIDER`, `HINDSIGHT_API_LLM_API_KEY` and `HINDSIGHT_API_LLM_MODEL` (OpenAI, Anthropic, Groq, Gemini, etc.), with volume `hindsight-data:/home/hindsight/.pg0`.
+See `.env.example`. The key values: `DATABASE_URL` (Postgres on port 5433), `HINDSIGHT_BASE_URL`, and `HINDSIGHT_LLM_PROVIDER` / `HINDSIGHT_LLM_MODEL` / `HINDSIGHT_LLM_API_KEY` for the LLM the Hindsight container uses (default OpenAI `gpt-5-mini`).
 
 ---
 
 ## 6. Database schema (Postgres)
 
 ```
-clients       id, slug, name, industry, bank_id
+clients       id, slug, name, industry, prefix, bank_id
 repos         id, client_id, name (e.g. northwind/patient-portal), stack
-scans         id, repo_id, round, scanned_at, tool, status (analyzing|done|failed), brief
-findings      id, scan_id, key, cwe, cwe_name, severity, title, file, line, endpoint, sink,
-              description, fingerprint,                       -- sha1(cwe + file + endpoint)
+scans         id, repo_id, round, scanned_at, tool,
+              stage (saved|recalling|reflecting|retaining|done|failed), brief, error, finished_at
+findings      id, scan_id, key, rule_id, cwe, cwe_name, severity, title, file, line, endpoint, sink,
+              description, fingerprint,                       -- sha1(cwe | file | endpoint)
               status (open|fixed), fixed_at, fix_note,
               verdict (new|recurring|regression|persistent),
-              prior_rounds int[], root_cause, durable_fix
-memory_calls  id, scan_id, finding_id, op (retain|recall|reflect|mental_model),
-              bank_id, request jsonb, response jsonb, latency_ms, created_at
+              verdict_source (memory|exact-match|fallback), occurrence,
+              prior_findings jsonb,   -- the "earlier offense" chips, each a real earlier finding
+              root_cause, durable_fix,
+              memory_evidence jsonb   -- what Hindsight recall returned for this finding
+memory_calls  id, client_id, scan_id, finding_id,
+              op (bank|retain|recall|reflect|mental_model|consolidate),
+              bank_id, label, request jsonb, response jsonb, error, latency_ms, created_at
 ```
 
-`memory_calls` powers the **Memory Trace drawer**. Every Hindsight call is logged by the wrapper in `lib/hindsight.ts`, which is how memory stays visible in the UI.
+`memory_calls` powers the **Memory Trace drawer**. Every Hindsight call goes through `traced()` in `packages/memory/src/trace.ts`, which is how memory stays visible in the UI.
 
 ---
 
-## 7. Hindsight integration (`lib/memory.ts`)
+## 7. Hindsight integration (`packages/memory`)
 
 ### Client
 
@@ -273,7 +287,7 @@ Write it as a **sentence, not raw JSON**, because Hindsight extracts facts from 
 ```ts
 await hs.retain(bank,
   `Scan round 3 (2026-06-08) of northwind/patient-portal: HIGH SQL injection (CWE-89) in GET /api/reports/export. ` +
-  `The sortBy query parameter reaches a raw ORDER BY through buildQuery() in src/db/queryBuilder.ts.`,
+  `The sortBy query parameter reaches a raw ORDER BY through buildQuery() in src/lib/db/queryBuilder.ts.`,
   {
     timestamp: scan.scannedAt,               // backdated so the timeline makes sense
     context: 'Finding from an automated security scan of the client repository',
@@ -286,7 +300,7 @@ await hs.retain(bank,
     entities: [
       { text: 'CWE-89 SQL Injection', type: 'vuln_class' },
       { text: 'buildQuery()', type: 'function' },
-      { text: 'src/db/queryBuilder.ts', type: 'file' },
+      { text: 'src/lib/db/queryBuilder.ts', type: 'file' },
       { text: 'GET /api/reports/export', type: 'endpoint' },
     ],
   });
@@ -411,10 +425,10 @@ const profile = await hs.getMentalModel(bank, 'security-profile');
       "cweName": "SQL Injection",
       "severity": "high",
       "title": "User-controlled sortBy reaches raw ORDER BY clause",
-      "file": "src/api/appointments/filter.ts",
+      "file": "src/app/api/appointments/filter/route.ts",
       "line": 42,
       "endpoint": "GET /api/appointments/filter",
-      "sink": "buildQuery() in src/db/queryBuilder.ts",
+      "sink": "buildQuery() in src/lib/db/queryBuilder.ts",
       "description": "The sortBy query parameter is passed unvalidated to buildQuery(), which concatenates it into an ORDER BY clause."
     }
   ]
@@ -446,7 +460,7 @@ Each round has 6–10 findings: the story findings below plus noise.
 |---|---|---|---|---|
 | **SQLi CWE-89** via shared `buildQuery()` | `/api/patients/search` → fixed Jan 20 *(endpoint allow-list only)* | — | `/api/reports/export` → 🟠 recurring (2nd) → fixed Jul 8 *(endpoint only again)* | `/api/appointments/filter` → 🟠 **recurring (3rd)** |
 | **IDOR CWE-639** `/api/records/:id` | found → fixed Feb 10 *(ownership middleware on the router)* | — | — | — ✅ **held** |
-| **Hard-coded Stripe key CWE-798** `src/config/payments.ts` | found → fixed Feb 3 *(moved to env var)* | — | — | back in same file → 🔴 **regression** |
+| **Hard-coded Stripe key CWE-798** `src/lib/payments/stripe.ts` | found → fixed Feb 3 *(moved to env var)* | — | — | back in same file → 🔴 **regression** |
 | Missing CSP header CWE-693 | found | still open | still open | 🟡 persistent |
 
 **Learned pattern (observation) to show:** "Northwind's middleware-level fixes hold; endpoint-level fixes don't."
@@ -457,7 +471,7 @@ Each round has 6–10 findings: the story findings below plus noise.
 |---|---|---|---|---|
 | **SSRF CWE-918** `payments/webhooks/validators.py` `validate_callback_url()` | found → fixed Feb *(resolve host, block private IP ranges)* | — | — | — ✅ held |
 | **Login brute force CWE-307** `POST /v1/auth/login` | found → fixed Feb *(django-axes lockout)* | — | — | — ✅ held |
-| **Unsafe deserialization CWE-502** `yaml.load` | `reconciliation/importers/bank_feed.py` → fixed Jan *(yaml.safe_load)* | — | — | `reconciliation/importers/statement_parser.py` after a refactor → 🔴 regression |
+| **Unsafe deserialization CWE-502** `yaml.load` | `reconciliation/importers/bank_feed.py` → fixed Jan *(yaml.safe_load)* | — | — | `reconciliation/importers/statement_parser.py` after a refactor → 🟠 recurring (same yaml.load pattern, moved file) |
 | Verbose errors CWE-209 (DEBUG=True on staging) | — | found → fixed | — | — |
 
 Trend: improving (about 9 → 6 → 4 → 3 findings).
@@ -478,12 +492,12 @@ Missing security headers (CWE-693), verbose error messages (CWE-209), outdated d
 
 ## 10. Build order (~24h of work)
 
-- [ ] **1. Setup (1h):** Next.js + pnpm + Tailwind/shadcn + Drizzle. `docker-compose.yml` with Postgres + Hindsight. Check that `:8888` and `:9999` respond.
-- [ ] **2. Database schema (1h):** tables from section 6, migrations, `lib/db`.
-- [ ] **3. Dataset (2–3h):** write `data/*/round-1..4.json` + `fixes.json` following section 9.
-- [ ] **4. Memory module (3h):** `lib/hindsight.ts` (client + logging wrapper into `memory_calls`) and `lib/memory.ts` (5 functions from section 7).
-- [ ] **5. Bank setup + seed (1–2h):** `scripts/setup-banks.ts`, then `scripts/seed.ts` replays R1 → fixes → R2 → fixes → R3 through the **real pipeline** with backdated timestamps. Open Hindsight UI (`:9999`) and check that the memories and observations are there.
-- [ ] **6. Pipeline + API (3h):** `POST /api/scans`, `GET /api/scans/[id]`, `POST /api/findings/[id]/fix`.
+- [x] **1. Setup:** Turborepo + pnpm, Next.js 16 in `apps/web`, Hono in `apps/api`, `docker-compose.yml` with Postgres + Hindsight.
+- [x] **2. Database schema:** `packages/db` (Drizzle), applied with `pnpm db:push`.
+- [x] **3. Dataset:** `data/*/round-1..4.json` + `fixes.json`, validated by `check-data`.
+- [x] **4. Memory module:** `packages/memory` (every Hindsight call, logged to `memory_calls`).
+- [ ] **5. Bank setup + seed:** code done (`pnpm seed`). Needs a live run with Hindsight + an LLM key, then check memories and observations in the Hindsight UI (`:9999`).
+- [x] **6. Pipeline + API:** `packages/core` + `apps/api` routes, tested against Postgres (with Hindsight offline, verdicts fall back to past scans). Needs the same live Hindsight run as step 5.
 - [ ] **7. Scan results page (5h):** analyzing checklist, finding cards (verdict badges, prior-round chips, root cause, durable fix), Memory Trace drawer, Memory ON/OFF toggle.
 - [ ] **8. Client page (3h):** Recharts trend (open / fixed / regressed per round) + Security profile box + past scans list. Clients list home page.
 - [ ] **9. Polish (2h):** README with architecture diagram, rehearse demo 5+ times, **record a backup video**.
@@ -518,7 +532,7 @@ Missing security headers (CWE-693), verbose error messages (CWE-209), outdated d
 |---|---|---|
 | Innovation | 30% | Root-cause memory (same bug in a *different* place), fix-quality memory, skeptical auditor persona |
 | Visible use of Hindsight | 25% | Memory Trace drawer, live analyzing checklist, Memory ON/OFF, security profile, Hindsight UI in demo |
-| Clean technical implementation | 20% | All Hindsight calls in one file (`lib/memory.ts`), every call logged, clear Postgres/Hindsight split |
+| Clean technical implementation | 20% | All Hindsight calls in one package (`packages/memory`), every call logged, clear Postgres/Hindsight split |
 | User experience | 15% | Verdict badges, clickable prior-round chips, one clear workflow |
 | Real-world impact | 10% | Pentesters/security teams re-audit clients every quarter; per-client isolation matches real confidentiality needs |
 

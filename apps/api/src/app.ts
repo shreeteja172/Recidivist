@@ -120,14 +120,14 @@ app.delete("/scans/:id", async (c) => {
 app.post("/findings/:id/fix", async (c) => {
   const parsed = MarkFixedSchema.safeParse(await jsonBody(c));
   if (!parsed.success) throw new HttpError(400, "Invalid fix", parsed.error.issues);
-  const [finding] = await markFixed([
+  const { findings, memoryError } = await markFixed([
     {
       findingId: id(c.req.param("id")),
       note: parsed.data.note,
       fixedAt: parsed.data.fixedAt ? new Date(parsed.data.fixedAt) : undefined,
     },
   ]);
-  return c.json(finding);
+  return c.json({ finding: findings[0], memory: { ok: !memoryError, error: memoryError } });
 });
 
 // ---- memory trace + demo helpers -------------------------------------------

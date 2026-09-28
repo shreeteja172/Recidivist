@@ -1,0 +1,87 @@
+{
+  "client": "ledgerly",
+  "repo": "ledgerly/payments-api",
+  "round": 2,
+  "scannedAt": "2026-03-09T09:30:00Z",
+  "tool": "semgrep + manual review",
+  "findings": [
+    {
+      "key": "LG-R2-01",
+      "ruleId": "manual-review",
+      "cwe": "CWE-613",
+      "cweName": "Insufficient Session Expiration",
+      "severity": "medium",
+      "title": "API tokens never expire",
+      "file": "config/settings/base.py",
+      "line": 88,
+      "endpoint": null,
+      "sink": null,
+      "description": "REST framework tokens are issued without an expiry and are not rotated on password change, so a leaked token grants indefinite access to payment data."
+    },
+    {
+      "key": "LG-R2-02",
+      "ruleId": "python.django.security.audit.django-debug-enabled",
+      "cwe": "CWE-209",
+      "cweName": "Information Exposure Through an Error Message",
+      "severity": "medium",
+      "title": "DEBUG enabled on internet-facing staging",
+      "file": "config/settings/staging.py",
+      "line": 4,
+      "endpoint": null,
+      "sink": null,
+      "description": "Staging runs with DEBUG=True and is reachable from the internet. Error pages show full tracebacks, settings values and the SQL behind payment endpoints."
+    },
+    {
+      "key": "LG-R2-03",
+      "ruleId": "manual-review",
+      "cwe": "CWE-639",
+      "cweName": "Authorization Bypass Through User-Controlled Key (IDOR)",
+      "severity": "high",
+      "title": "Invoice PDFs downloadable across organizations",
+      "file": "invoices/views.py",
+      "line": 66,
+      "endpoint": "GET /v1/invoices/{id}/pdf",
+      "sink": null,
+      "description": "The invoice PDF view looks invoices up by id without filtering on the requesting user's organization. Any customer can download another company's invoices by iterating ids."
+    },
+    {
+      "key": "LG-R2-04",
+      "ruleId": "python.lang.security.audit.log-injection",
+      "cwe": "CWE-117",
+      "cweName": "Improper Output Neutralization for Logs",
+      "severity": "low",
+      "title": "Payment memo text written unescaped into audit logs",
+      "file": "payments/tasks.py",
+      "line": 41,
+      "endpoint": null,
+      "sink": null,
+      "description": "Payment memo text is written into audit log lines without escaping newlines, so a customer can forge additional audit entries."
+    },
+    {
+      "key": "LG-R2-05",
+      "ruleId": "manual-review",
+      "cwe": "CWE-770",
+      "cweName": "Allocation of Resources Without Limits or Throttling",
+      "severity": "medium",
+      "title": "Ledger report has no page size limit",
+      "file": "reports/views.py",
+      "line": 30,
+      "endpoint": "GET /v1/reports/ledger",
+      "sink": null,
+      "description": "The ledger report endpoint accepts any page_size and loads the full result into memory. A single request for a large organization can exhaust worker memory."
+    },
+    {
+      "key": "LG-R2-06",
+      "ruleId": "python.django.security.audit.weak-password-validators",
+      "cwe": "CWE-521",
+      "cweName": "Weak Password Requirements",
+      "severity": "low",
+      "title": "Weak password policy for finance users",
+      "file": "accounts/validators.py",
+      "line": 12,
+      "endpoint": null,
+      "sink": null,
+      "description": "AUTH_PASSWORD_VALIDATORS only enforces a minimum length of 6 characters and has no common-password check."
+    }
+  ]
+}

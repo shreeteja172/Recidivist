@@ -71,7 +71,8 @@ async function seedClient(client: Client, repo: Repo) {
     });
     if (roundFixes.length > 0) {
       log(`round ${round}: retaining ${roundFixes.length} fixes`);
-      await markFixed(roundFixes, { retainAsync: false });
+      const { memoryError } = await markFixed(roundFixes, { retainAsync: false });
+      if (memoryError) throw new Error(`retaining fixes failed: ${memoryError}`);
     }
 
     log(`round ${round}: consolidating observations`);

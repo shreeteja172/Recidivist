@@ -1,0 +1,100 @@
+{
+  "client": "brightpath",
+  "repo": "brightpath/lms-core",
+  "round": 2,
+  "scannedAt": "2026-03-09T09:30:00Z",
+  "tool": "semgrep + manual review",
+  "findings": [
+    {
+      "key": "BP-R2-01",
+      "ruleId": "html.thymeleaf.security.audit.unescaped-th-utext",
+      "cwe": "CWE-79",
+      "cweName": "Cross-site Scripting (XSS)",
+      "severity": "high",
+      "title": "Instructor feedback rendered unescaped with th:utext",
+      "file": "src/main/resources/templates/assignment/feedback.html",
+      "line": 31,
+      "endpoint": "GET /assignments/{id}/feedback",
+      "sink": "th:utext rendering of rich-text fields (no shared HTML sanitizer)",
+      "description": "Instructor comments on assignments are rendered with th:utext. A teaching assistant account, or anyone who can edit feedback, can inject script that runs when students open their grades."
+    },
+    {
+      "key": "BP-R2-02",
+      "ruleId": "manual-review",
+      "cwe": "CWE-915",
+      "cweName": "Improperly Controlled Modification of Object Attributes (mass assignment)",
+      "severity": "high",
+      "title": "Profile update binds the role field",
+      "file": "src/main/java/com/brightpath/lms/user/UserController.java",
+      "line": 72,
+      "endpoint": "PUT /api/users/{id}",
+      "sink": null,
+      "description": "updateProfile() binds the request body directly onto the User entity, including the role and enrollment fields. A student can promote their own account to instructor by adding a role field to the request."
+    },
+    {
+      "key": "BP-R2-03",
+      "ruleId": "manual-review",
+      "cwe": "CWE-307",
+      "cweName": "Improper Restriction of Excessive Authentication Attempts",
+      "severity": "medium",
+      "title": "No lockout on student and instructor login",
+      "file": "src/main/java/com/brightpath/lms/auth/LoginController.java",
+      "line": 35,
+      "endpoint": "POST /login",
+      "sink": null,
+      "description": "Failed logins are not counted, so student and instructor passwords can be guessed without limit."
+    },
+    {
+      "key": "BP-R2-04",
+      "ruleId": "manual-review",
+      "cwe": "CWE-639",
+      "cweName": "Authorization Bypass Through User-Controlled Key (IDOR)",
+      "severity": "high",
+      "title": "Grades readable for any student id",
+      "file": "src/main/java/com/brightpath/lms/grades/GradeController.java",
+      "line": 48,
+      "endpoint": "GET /api/grades/{studentId}",
+      "sink": null,
+      "description": "The grades API returns grades for the studentId in the path without checking that it matches the logged-in student or an instructor of the course."
+    },
+    {
+      "key": "BP-R2-05",
+      "ruleId": "java.lang.security.audit.ssrf-url-fetch",
+      "cwe": "CWE-918",
+      "cweName": "Server-Side Request Forgery (SSRF)",
+      "severity": "medium",
+      "title": "LTI tool configuration URL fetched without destination checks",
+      "file": "src/main/java/com/brightpath/lms/lti/LtiLaunchService.java",
+      "line": 64,
+      "endpoint": "POST /lti/launch",
+      "sink": null,
+      "description": "When an instructor registers an external LTI tool, the server fetches its configuration URL without restricting the destination, which allows requests to internal services."
+    },
+    {
+      "key": "BP-R2-06",
+      "ruleId": "java.lang.security.audit.sensitive-data-in-logs",
+      "cwe": "CWE-532",
+      "cweName": "Insertion of Sensitive Information into Log File",
+      "severity": "low",
+      "title": "Password reset links logged at DEBUG",
+      "file": "src/main/java/com/brightpath/lms/auth/PasswordResetService.java",
+      "line": 51,
+      "endpoint": null,
+      "sink": null,
+      "description": "The reset flow logs the full reset link, including its token, at DEBUG level, and DEBUG logging is enabled in production."
+    },
+    {
+      "key": "BP-R2-07",
+      "ruleId": "java.spring.security.audit.open-redirect",
+      "cwe": "CWE-601",
+      "cweName": "Open Redirect",
+      "severity": "low",
+      "title": "Open redirect after login via redirect parameter",
+      "file": "src/main/java/com/brightpath/lms/auth/LoginSuccessHandler.java",
+      "line": 29,
+      "endpoint": "GET /login",
+      "sink": null,
+      "description": "After login the handler redirects to the redirect query parameter without checking the host, so crafted login links can send students to a look-alike site."
+    }
+  ]
+}

@@ -10,7 +10,7 @@ type FixInput = { findingId: number; note: string; fixedAt?: Date };
  * The note ("what changed and what didn't") is what later lets reflect say "you fixed the endpoint, not the helper".
  */
 export async function markFixed(fixes: FixInput[], opts: { retainAsync?: boolean } = {}) {
-  if (fixes.length === 0) return [];
+  if (fixes.length === 0) return { findings: [], memoryError: null };
   const ids = fixes.map((f) => f.findingId);
   const rows = await db
     .select({ f: findings, scan: scans, repo: repos, client: clients })
@@ -37,11 +37,17 @@ export async function markFixed(fixes: FixInput[], opts: { retainAsync?: boolean
     memos.push({ finding: toMemo(row.f, row.scan, row.repo), fixedAt, note: fix.note });
   }
 
+  // The fix is saved even if memory is down; the caller gets the memory error to show.
   const { client } = rows[0]!;
-  await retainFixes(client.bankId, memos, {
-    async: opts.retainAsync ?? true,
-    clientId: client.id,
-    scanId: fixes.length === 1 ? rows[0]!.scan.id : undefined,
-  });
-  return updated;
+  let memoryError: string | null = null;
+  try {
+    await retainFixes(client.bankId, memos, {
+      async: opts.retainAsync ?? true,
+      clientId: client.id,
+      scanId: fixes.length === 1 ? rows[0]!.scan.id : undefined,
+    });
+  } catch (err) {
+    memoryError = err instanceof Error ? err.message : String(err);
+  }
+  return { findings: updated, memoryError };
 }

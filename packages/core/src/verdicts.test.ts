@@ -63,6 +63,18 @@ test("memory claim with no earlier finding to back it becomes new", () => {
   assert.equal(d.priorFindings.length, 0);
 });
 
+test("memory 'regression' in a different file is shown as recurring", () => {
+  const d = decideVerdict(
+    { id: 25, cwe: "CWE-89", fingerprint: "fp-sqli-invoices" },
+    history,
+    [],
+    { findingId: 25, verdict: "regression", priorRounds: [1], rootCause: null, durableFix: null },
+    true,
+  );
+  assert.equal(d.verdict, "recurring");
+  assert.deepEqual(d.priorFindings.map((p) => p.round), [1]);
+});
+
 test("without reflect, same CWE falls back to recurring", () => {
   const d = decideVerdict({ id: 24, cwe: "CWE-89", fingerprint: "fp-sqli-new" }, history, [], undefined, false);
   assert.equal(d.verdict, "recurring");

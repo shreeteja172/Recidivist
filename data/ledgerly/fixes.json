@@ -1,0 +1,87 @@
+[
+  {
+    "key": "LG-R1-01",
+    "fixedAt": "2026-02-05",
+    "note": "validate_callback_url() now resolves the hostname, rejects private, loopback and link-local ranges, allows https only, and re-checks the resolved IP at send time."
+  },
+  {
+    "key": "LG-R1-02",
+    "fixedAt": "2026-02-12",
+    "note": "Added django-axes lockout (5 failed attempts per 15 minutes) and per-IP throttling on LoginView."
+  },
+  {
+    "key": "LG-R1-03",
+    "fixedAt": "2026-01-15",
+    "note": "Replaced yaml.load with yaml.safe_load in parse_feed(). No lint rule was added to block yaml.load elsewhere."
+  },
+  {
+    "key": "LG-R1-04",
+    "fixedAt": "2026-01-10",
+    "note": "Upgraded cryptography to 42.0.5 and enabled Dependabot for requirements.txt."
+  },
+  {
+    "key": "LG-R1-06",
+    "fixedAt": "2026-01-28",
+    "note": "PayoutSerializer now returns only the last four digits of account numbers."
+  },
+  {
+    "key": "LG-R1-07",
+    "fixedAt": "2026-02-02",
+    "note": "Removed csrf_exempt from the legacy export view."
+  },
+  {
+    "key": "LG-R1-08",
+    "fixedAt": "2026-02-18",
+    "note": "CORS restricted to the dashboard origin."
+  },
+  {
+    "key": "LG-R1-09",
+    "fixedAt": "2026-02-25",
+    "note": "Payout checksums switched to SHA-256 with HMAC signing."
+  },
+  {
+    "key": "LG-R2-01",
+    "fixedAt": "2026-03-24",
+    "note": "Tokens now expire after 8 hours and are rotated on password change."
+  },
+  {
+    "key": "LG-R2-02",
+    "fixedAt": "2026-04-02",
+    "note": "DEBUG turned off on staging, and staging moved behind the VPN."
+  },
+  {
+    "key": "LG-R2-03",
+    "fixedAt": "2026-03-19",
+    "note": "Invoice lookups are now scoped to request.user.organization through a shared queryset mixin used by every invoice view."
+  },
+  {
+    "key": "LG-R2-04",
+    "fixedAt": "2026-04-20",
+    "note": "The audit logger now escapes control characters in user-supplied fields."
+  },
+  {
+    "key": "LG-R2-05",
+    "fixedAt": "2026-05-04",
+    "note": "page_size capped at 500 and large report generation moved to a Celery task."
+  },
+  {
+    "key": "LG-R3-01",
+    "fixedAt": "2026-06-22",
+    "note": "Password validators now require 12 characters and reject common passwords."
+  },
+  {
+    "key": "LG-R3-02",
+    "fixedAt": "2026-06-16",
+    "note": "XFrameOptionsMiddleware restored with X_FRAME_OPTIONS = DENY."
+  },
+  {
+    "key": "LG-R3-03",
+    "fixedAt": "2026-06-18",
+    "note": "The SSO callback validates next with url_has_allowed_host_and_scheme()."
+  },
+  {
+    "key": "LG-R3-04",
+    "fixedAt": "2026-07-01",
+    "note": "Removed SHA1PasswordHasher; affected users are forced to reset their password."
+  }
+]

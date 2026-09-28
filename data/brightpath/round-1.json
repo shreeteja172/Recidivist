@@ -1,0 +1,100 @@
+{
+  "client": "brightpath",
+  "repo": "brightpath/lms-core",
+  "round": 1,
+  "scannedAt": "2025-12-08T09:30:00Z",
+  "tool": "semgrep + manual review",
+  "findings": [
+    {
+      "key": "BP-R1-01",
+      "ruleId": "html.thymeleaf.security.audit.unescaped-th-utext",
+      "cwe": "CWE-79",
+      "cweName": "Cross-site Scripting (XSS)",
+      "severity": "high",
+      "title": "Discussion post body rendered unescaped with th:utext",
+      "file": "src/main/resources/templates/course/discussion.html",
+      "line": 44,
+      "endpoint": "GET /courses/{id}/discussion",
+      "sink": "th:utext rendering of rich-text fields (no shared HTML sanitizer)",
+      "description": "Discussion posts are stored as rich text and rendered with th:utext, which outputs raw HTML. A student can post markup that runs script in the browser of every classmate and instructor who opens the thread."
+    },
+    {
+      "key": "BP-R1-02",
+      "ruleId": "java.spring.security.audit.spring-csrf-disabled",
+      "cwe": "CWE-352",
+      "cweName": "Cross-Site Request Forgery (CSRF)",
+      "severity": "high",
+      "title": "CSRF protection disabled globally",
+      "file": "src/main/java/com/brightpath/lms/config/SecurityConfig.java",
+      "line": 41,
+      "endpoint": null,
+      "sink": null,
+      "description": "SecurityConfig disables CSRF protection for all routes with http.csrf(csrf -> csrf.disable()). Grade submission and enrollment changes use session cookies, so a malicious page can submit them on behalf of a logged-in instructor."
+    },
+    {
+      "key": "BP-R1-03",
+      "ruleId": "java.lang.security.audit.path-traversal-file-download",
+      "cwe": "CWE-22",
+      "cweName": "Path Traversal",
+      "severity": "high",
+      "title": "Path traversal in course file download",
+      "file": "src/main/java/com/brightpath/lms/files/FileController.java",
+      "line": 57,
+      "endpoint": "GET /files/download",
+      "sink": null,
+      "description": "The download endpoint joins the user-supplied name parameter onto the course storage directory without normalizing it. Relative path segments let a user read files outside the course folder, including application configuration."
+    },
+    {
+      "key": "BP-R1-04",
+      "ruleId": "dependency-audit.maven.vulnerable-version",
+      "cwe": "CWE-1395",
+      "cweName": "Dependency on Vulnerable Third-Party Component",
+      "severity": "medium",
+      "title": "Outdated jackson-databind with published advisories",
+      "file": "pom.xml",
+      "line": 88,
+      "endpoint": null,
+      "sink": null,
+      "description": "pom.xml pins jackson-databind 2.13.2, which has published deserialization advisories, and polymorphic typing is enabled on one ObjectMapper."
+    },
+    {
+      "key": "BP-R1-05",
+      "ruleId": "java.spring.security.audit.error-include-stacktrace",
+      "cwe": "CWE-209",
+      "cweName": "Information Exposure Through an Error Message",
+      "severity": "low",
+      "title": "Error pages include stack traces",
+      "file": "src/main/resources/application.yml",
+      "line": 22,
+      "endpoint": null,
+      "sink": null,
+      "description": "server.error.include-stacktrace is set to always, so error pages show stack traces with class names and SQL statements."
+    },
+    {
+      "key": "BP-R1-06",
+      "ruleId": "manual-review",
+      "cwe": "CWE-307",
+      "cweName": "Improper Restriction of Excessive Authentication Attempts",
+      "severity": "medium",
+      "title": "No lockout on student and instructor login",
+      "file": "src/main/java/com/brightpath/lms/auth/LoginController.java",
+      "line": 35,
+      "endpoint": "POST /login",
+      "sink": null,
+      "description": "Failed logins are not counted, so student and instructor passwords can be guessed without limit."
+    },
+    {
+      "key": "BP-R1-07",
+      "ruleId": "java.spring.security.audit.cookie-missing-httponly",
+      "cwe": "CWE-1004",
+      "cweName": "Sensitive Cookie Without HttpOnly Flag",
+      "severity": "low",
+      "title": "Remember-me cookie lacks HttpOnly and Secure",
+      "file": "src/main/resources/application.yml",
+      "line": 30,
+      "endpoint": null,
+      "sink": null,
+      "description": "The remember-me cookie is issued without HttpOnly or Secure, so scripts can read it and it is sent over plain HTTP."
+    }
+  ]
+}

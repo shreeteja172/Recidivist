@@ -1,0 +1,87 @@
+{
+  "client": "brightpath",
+  "repo": "brightpath/lms-core",
+  "round": 3,
+  "scannedAt": "2026-06-08T09:30:00Z",
+  "tool": "semgrep + manual review",
+  "findings": [
+    {
+      "key": "BP-R3-01",
+      "ruleId": "html.thymeleaf.security.audit.unescaped-th-utext",
+      "cwe": "CWE-79",
+      "cweName": "Cross-site Scripting (XSS)",
+      "severity": "high",
+      "title": "Profile bio rendered unescaped with th:utext",
+      "file": "src/main/resources/templates/profile/bio.html",
+      "line": 19,
+      "endpoint": "GET /users/{id}/profile",
+      "sink": "th:utext rendering of rich-text fields (no shared HTML sanitizer)",
+      "description": "The public profile page renders the user's bio with th:utext. Any user can put markup in their bio that runs script for everyone who views their profile, including administrators."
+    },
+    {
+      "key": "BP-R3-02",
+      "ruleId": "java.spring.security.audit.spring-csrf-disabled",
+      "cwe": "CWE-352",
+      "cweName": "Cross-Site Request Forgery (CSRF)",
+      "severity": "high",
+      "title": "CSRF protection disabled globally",
+      "file": "src/main/java/com/brightpath/lms/config/SecurityConfig.java",
+      "line": 41,
+      "endpoint": null,
+      "sink": null,
+      "description": "SecurityConfig disables CSRF protection for all routes with http.csrf(csrf -> csrf.disable()), introduced in commit 9f3d2b1 \"disable csrf for mobile app\". Browser sessions for grade submission and enrollment changes are exposed to cross-site request forgery."
+    },
+    {
+      "key": "BP-R3-03",
+      "ruleId": "java.spring.security.audit.open-redirect",
+      "cwe": "CWE-601",
+      "cweName": "Open Redirect",
+      "severity": "low",
+      "title": "Open redirect after login via redirect parameter",
+      "file": "src/main/java/com/brightpath/lms/auth/LoginSuccessHandler.java",
+      "line": 29,
+      "endpoint": "GET /login",
+      "sink": null,
+      "description": "After login the handler redirects to the redirect query parameter without checking the host, so crafted login links can send students to a look-alike site."
+    },
+    {
+      "key": "BP-R3-04",
+      "ruleId": "generic.secrets.security.detected-password-in-config",
+      "cwe": "CWE-798",
+      "cweName": "Use of Hard-coded Credentials",
+      "severity": "high",
+      "title": "SMTP password committed in production config",
+      "file": "src/main/resources/application-prod.yml",
+      "line": 14,
+      "endpoint": null,
+      "sink": null,
+      "description": "application-prod.yml contains the production SMTP account password in plain text (value redacted in this report). Anyone with repository access can send email as the platform."
+    },
+    {
+      "key": "BP-R3-05",
+      "ruleId": "manual-review",
+      "cwe": "CWE-770",
+      "cweName": "Allocation of Resources Without Limits or Throttling",
+      "severity": "medium",
+      "title": "No size limit on assignment uploads",
+      "file": "src/main/java/com/brightpath/lms/files/UploadController.java",
+      "line": 40,
+      "endpoint": "POST /files/upload",
+      "sink": null,
+      "description": "spring.servlet.multipart.max-file-size is set to -1 and the controller streams uploads to disk without a quota, so a single user can fill the shared volume."
+    },
+    {
+      "key": "BP-R3-06",
+      "ruleId": "java.spring.security.audit.long-session-timeout",
+      "cwe": "CWE-613",
+      "cweName": "Insufficient Session Expiration",
+      "severity": "low",
+      "title": "Sessions stay valid for 30 days",
+      "file": "src/main/resources/application.yml",
+      "line": 35,
+      "endpoint": null,
+      "sink": null,
+      "description": "server.servlet.session.timeout is set to 30d, so sessions on shared lab computers stay valid for weeks."
+    }
+  ]
+}

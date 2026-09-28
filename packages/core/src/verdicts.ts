@@ -47,7 +47,8 @@ const byRound = (a: HistoryRow, b: HistoryRow) => a.round - b.round || a.finding
  *
  * - Exact same issue (fingerprint) seen before: regression if it was fixed, persistent if still open.
  *   This is deterministic, so memory can't get it wrong.
- * - Otherwise Hindsight reflect decides (it spots the same root cause in a different file/endpoint).
+ * - Otherwise Hindsight reflect decides whether it is new or the same root cause recurring in a
+ *   different file/endpoint (its regression/persistent answers count as recurring here).
  * - Every prior round shown in the UI must be backed by a real earlier finding ("every claim has a receipt").
  *   If reflect claims history that no earlier finding backs up, the verdict falls back to "new".
  * - If reflect was unavailable, fall back to "same CWE seen before = recurring".
@@ -83,7 +84,9 @@ export function decideVerdict(
   if (receipts.length === 0) receipts = sameClass;
   if (receipts.length === 0) return finish("new", "memory", [], text);
 
-  return finish(reflected.verdict, "memory", receipts, text);
+  // regression / persistent mean "the exact same issue", which the fingerprint check above already covers.
+  // Anything memory links from a different file or endpoint is the same root cause recurring.
+  return finish("recurring", "memory", receipts, text);
 }
 
 function finish(

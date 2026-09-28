@@ -1,0 +1,82 @@
+[
+  {
+    "key": "BP-R1-01",
+    "fixedAt": "2026-01-22",
+    "note": "Switched the discussion post body from th:utext to th:text in course/discussion.html only. Other templates that render rich text were not reviewed."
+  },
+  {
+    "key": "BP-R1-02",
+    "fixedAt": "2026-02-18",
+    "note": "Re-enabled CSRF protection with CookieCsrfTokenRepository."
+  },
+  {
+    "key": "BP-R1-03",
+    "fixedAt": "2026-01-12",
+    "note": "Download names are normalized and must resolve inside the course directory."
+  },
+  {
+    "key": "BP-R1-04",
+    "fixedAt": "2026-02-09",
+    "note": "Upgraded jackson-databind to 2.17.1 and removed default typing."
+  },
+  {
+    "key": "BP-R1-05",
+    "fixedAt": "2026-01-12",
+    "note": "Set server.error.include-stacktrace to never."
+  },
+  {
+    "key": "BP-R1-07",
+    "fixedAt": "2026-02-09",
+    "note": "The remember-me cookie is now HttpOnly, Secure and SameSite=Lax."
+  },
+  {
+    "key": "BP-R2-01",
+    "fixedAt": "2026-04-06",
+    "note": "Changed feedback.html to render the instructor comment with th:text. No shared sanitizer was introduced."
+  },
+  {
+    "key": "BP-R2-02",
+    "fixedAt": "2026-04-14",
+    "note": "updateProfile() now binds a ProfileUpdateDto that excludes the role and enrollment fields."
+  },
+  {
+    "key": "BP-R2-03",
+    "fixedAt": "2026-03-30",
+    "note": "Added a login attempt counter with a 15-minute lockout after 5 failures."
+  },
+  {
+    "key": "BP-R2-04",
+    "fixedAt": "2026-03-23",
+    "note": "GradeController now checks that the caller is the student or an instructor of the course."
+  },
+  {
+    "key": "BP-R2-05",
+    "fixedAt": "2026-05-12",
+    "note": "LTI configuration URLs must use https and resolve to public addresses."
+  },
+  {
+    "key": "BP-R2-06",
+    "fixedAt": "2026-04-01",
+    "note": "Reset links are no longer logged, and the production log level is INFO."
+  },
+  {
+    "key": "BP-R3-01",
+    "fixedAt": "2026-07-01",
+    "note": "Escaped the bio field in profile/bio.html only. Announcements and other rich-text templates still use th:utext."
+  },
+  {
+    "key": "BP-R3-03",
+    "fixedAt": "2026-06-25",
+    "note": "Redirect targets after login are now restricted to relative paths."
+  },
+  {
+    "key": "BP-R3-04",
+    "fixedAt": "2026-06-15",
+    "note": "SMTP credentials moved to the secrets manager and the password rotated."
+  },
+  {
+    "key": "BP-R3-05",
+    "fixedAt": "2026-07-09",
+    "note": "Multipart max size set to 50MB with a per-user storage quota."
+  }
+]

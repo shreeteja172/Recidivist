@@ -1,0 +1,61 @@
+{
+  "client": "ledgerly",
+  "repo": "ledgerly/payments-api",
+  "round": 3,
+  "scannedAt": "2026-06-08T09:30:00Z",
+  "tool": "semgrep + manual review",
+  "findings": [
+    {
+      "key": "LG-R3-01",
+      "ruleId": "python.django.security.audit.weak-password-validators",
+      "cwe": "CWE-521",
+      "cweName": "Weak Password Requirements",
+      "severity": "low",
+      "title": "Weak password policy for finance users",
+      "file": "accounts/validators.py",
+      "line": 12,
+      "endpoint": null,
+      "sink": null,
+      "description": "AUTH_PASSWORD_VALIDATORS only enforces a minimum length of 6 characters and has no common-password check."
+    },
+    {
+      "key": "LG-R3-02",
+      "ruleId": "python.django.security.audit.missing-xframe-options",
+      "cwe": "CWE-1021",
+      "cweName": "Improper Restriction of Rendered UI Layers (clickjacking)",
+      "severity": "medium",
+      "title": "Payment approval pages can be framed",
+      "file": "config/settings/base.py",
+      "line": 140,
+      "endpoint": null,
+      "sink": null,
+      "description": "XFrameOptionsMiddleware was removed from MIDDLEWARE during the dashboard refactor, so payment approval pages can be embedded in frames on other sites."
+    },
+    {
+      "key": "LG-R3-03",
+      "ruleId": "python.django.security.audit.open-redirect",
+      "cwe": "CWE-601",
+      "cweName": "Open Redirect",
+      "severity": "low",
+      "title": "Open redirect in SSO callback next parameter",
+      "file": "accounts/views/sso.py",
+      "line": 35,
+      "endpoint": "GET /v1/auth/sso/callback",
+      "sink": null,
+      "description": "The SSO callback redirects to the next parameter without url_has_allowed_host_and_scheme(). Attackers can craft login links that land users on a look-alike site."
+    },
+    {
+      "key": "LG-R3-04",
+      "ruleId": "python.django.security.audit.legacy-password-hasher",
+      "cwe": "CWE-916",
+      "cweName": "Use of Password Hash With Insufficient Computational Effort",
+      "severity": "low",
+      "title": "Legacy SHA1 password hasher still enabled",
+      "file": "config/settings/base.py",
+      "line": 95,
+      "endpoint": null,
+      "sink": null,
+      "description": "PASSWORD_HASHERS still lists SHA1PasswordHasher for users migrated from the old platform, so their hashes are never upgraded to a modern algorithm."
+    }
+  ]
+}

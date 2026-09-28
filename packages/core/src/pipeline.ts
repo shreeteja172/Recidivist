@@ -96,7 +96,7 @@ export async function runPipeline(scanId: number, opts: PipelineOptions = {}) {
     const brief =
       reflected?.brief ??
       (history.length === 0
-        ? `First engagement with ${client.name}: no history yet. Every finding is new and is now in memory for the next scan.`
+        ? `First engagement with ${client.name}: no history yet, so every finding is new. From here on, each scan is judged against this one.`
         : "Memory was unavailable for this scan, so verdicts come from exact matches in past scans only.");
     await db.update(scans).set({ brief }).where(eq(scans.id, scanId));
 
