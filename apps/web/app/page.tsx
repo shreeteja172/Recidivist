@@ -27,22 +27,27 @@ export default function HomePage() {
   useEffect(() => {
     fetchClients()
       .then(setClients)
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load clients"))
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : "Failed to load clients"),
+      )
       .finally(() => setLoading(false));
   }, []);
 
   const personaDescriptions: Record<string, { tag: string; story: string }> = {
     "northwind-health": {
       tag: "The Repeat Offender",
-      story: "Patches endpoints instead of shared helpers. SQL injection recurring across 3 rounds; hardcoded Stripe secret regressed.",
+      story:
+        "Patches endpoints instead of shared helpers. SQL injection recurring across 3 rounds; hardcoded Stripe secret regressed.",
     },
     ledgerly: {
       tag: "The Good Student",
-      story: "Remediates properly at architectural level. Findings dropping steadily from 9 down to 3.",
+      story:
+        "Remediates properly at architectural level. Findings dropping steadily from 9 down to 3.",
     },
     brightpath: {
       tag: "Whack-a-mole",
-      story: "Stored XSS recurs in 4 different template files because no central HTML sanitizer exists. CSRF was disabled again.",
+      story:
+        "Stored XSS recurs in 4 different template files because no central HTML sanitizer exists. CSRF was disabled again.",
     },
   };
 
@@ -60,12 +65,22 @@ export default function HomePage() {
           </div>
 
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-4">
-            The pentest agent that <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-amber-400 to-cyan-400">remembers who reoffends</span>.
+            The pentest agent that{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-amber-400 to-cyan-400">
+              remembers who reoffends
+            </span>
+            .
           </h1>
 
           <p className="text-base sm:text-lg text-slate-300 leading-relaxed mb-6">
-            Standard scanners treat every audit as a blank slate. Recidivist keeps a persistent{" "}
-            <span className="text-cyan-400 font-semibold">Hindsight memory bank</span> per client to recall past fixes, recognize when the same root cause returns in a different file, and alert you to regressed vulnerabilities.
+            Standard scanners treat every audit as a blank slate. Recidivist
+            keeps a persistent{" "}
+            <span className="text-cyan-400 font-semibold">
+              Hindsight memory bank
+            </span>{" "}
+            per client to recall past fixes, recognize when the same root cause
+            returns in a different file, and alert you to regressed
+            vulnerabilities.
           </p>
 
           <div className="flex flex-wrap gap-3">
@@ -89,9 +104,12 @@ export default function HomePage() {
       <div>
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-xl font-bold text-white tracking-tight">Client Repositories & Banks</h2>
+            <h2 className="text-xl font-bold text-white tracking-tight">
+              Client Repositories & Banks
+            </h2>
             <p className="text-sm text-slate-400">
-              Each client runs in an isolated Hindsight memory bank ensuring zero cross-tenant contamination.
+              Each client runs in an isolated Hindsight memory bank ensuring
+              zero cross-tenant contamination.
             </p>
           </div>
         </div>
@@ -99,15 +117,21 @@ export default function HomePage() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[1, 2, 3].map((n) => (
-              <div key={n} className="h-72 rounded-xl bg-slate-900/60 border border-slate-800 animate-pulse" />
+              <div
+                key={n}
+                className="h-72 rounded-xl bg-slate-900/60 border border-slate-800 animate-pulse"
+              />
             ))}
           </div>
         ) : error ? (
           <div className="p-6 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300">
-            <p className="font-semibold mb-1">Failed to connect to Recidivist API</p>
+            <p className="font-semibold mb-1">
+              Failed to connect to Recidivist API
+            </p>
             <p className="text-xs font-mono">{error}</p>
             <p className="text-xs text-slate-400 mt-2">
-              Ensure the backend is running at <code className="text-slate-300">http://localhost:4000</code>.
+              Set <code className="text-slate-300">NEXT_PUBLIC_API_URL</code> to
+              the deployed API URL and redeploy.
             </p>
           </div>
         ) : (
@@ -119,8 +143,10 @@ export default function HomePage() {
               };
 
               const latestRound = c.latestScan?.round ?? 0;
-              const regressions = c.latestScan?.counts?.byVerdict?.regression || 0;
-              const recurrings = c.latestScan?.counts?.byVerdict?.recurring || 0;
+              const regressions =
+                c.latestScan?.counts?.byVerdict?.regression || 0;
+              const recurrings =
+                c.latestScan?.counts?.byVerdict?.recurring || 0;
 
               return (
                 <div
@@ -168,16 +194,28 @@ export default function HomePage() {
                     {/* Metrics grid */}
                     <div className="grid grid-cols-3 gap-2 text-center mb-2">
                       <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800/80">
-                        <div className="text-base font-bold text-white">{c.openFindings}</div>
-                        <div className="text-[10px] text-slate-400 font-mono">Open</div>
+                        <div className="text-base font-bold text-white">
+                          {c.openFindings}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono">
+                          Open
+                        </div>
                       </div>
                       <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800/80">
-                        <div className="text-base font-bold text-rose-400">{regressions}</div>
-                        <div className="text-[10px] text-rose-400 font-mono">Regressions</div>
+                        <div className="text-base font-bold text-rose-400">
+                          {regressions}
+                        </div>
+                        <div className="text-[10px] text-rose-400 font-mono">
+                          Regressions
+                        </div>
                       </div>
                       <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800/80">
-                        <div className="text-base font-bold text-amber-400">{recurrings}</div>
-                        <div className="text-[10px] text-amber-400 font-mono">Recurring</div>
+                        <div className="text-base font-bold text-amber-400">
+                          {recurrings}
+                        </div>
+                        <div className="text-[10px] text-amber-400 font-mono">
+                          Recurring
+                        </div>
                       </div>
                     </div>
 
@@ -238,20 +276,32 @@ export default function HomePage() {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-slate-300">
           <div className="p-3 rounded-lg bg-slate-950 border border-slate-800/80">
-            <span className="font-mono text-cyan-400 font-bold block mb-1">1. Pre-seeded History</span>
-            Rounds 1–3 are already seeded into each client’s isolated Hindsight memory bank with past fixes.
+            <span className="font-mono text-cyan-400 font-bold block mb-1">
+              1. Pre-seeded History
+            </span>
+            Rounds 1–3 are already seeded into each client’s isolated Hindsight
+            memory bank with past fixes.
           </div>
           <div className="p-3 rounded-lg bg-slate-950 border border-slate-800/80">
-            <span className="font-mono text-amber-400 font-bold block mb-1">2. Upload Live Round 4</span>
-            Click "Upload" on Northwind Health and trigger Round 4 live scan analysis with 1-click.
+            <span className="font-mono text-amber-400 font-bold block mb-1">
+              2. Upload Live Round 4
+            </span>
+            Click "Upload" on Northwind Health and trigger Round 4 live scan
+            analysis with 1-click.
           </div>
           <div className="p-3 rounded-lg bg-slate-950 border border-slate-800/80">
-            <span className="font-mono text-rose-400 font-bold block mb-1">3. Memory ON/OFF Toggle</span>
-            Compare standard scanner output (blind) vs. Recidivist memory enriched findings with root causes.
+            <span className="font-mono text-rose-400 font-bold block mb-1">
+              3. Memory ON/OFF Toggle
+            </span>
+            Compare standard scanner output (blind) vs. Recidivist memory
+            enriched findings with root causes.
           </div>
           <div className="p-3 rounded-lg bg-slate-950 border border-slate-800/80">
-            <span className="font-mono text-emerald-400 font-bold block mb-1">4. Inspect Trace & Profile</span>
-            Inspect exact Hindsight recall & reflect calls, and review the auto-updating client security profile.
+            <span className="font-mono text-emerald-400 font-bold block mb-1">
+              4. Inspect Trace & Profile
+            </span>
+            Inspect exact Hindsight recall & reflect calls, and review the
+            auto-updating client security profile.
           </div>
         </div>
       </div>

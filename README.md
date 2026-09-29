@@ -27,6 +27,7 @@ Needs Node 22+, pnpm, and Docker.
    ```bash
    cp .env.example .env
    ```
+   For a deployed web app, set `NEXT_PUBLIC_API_URL` in the hosting provider to the public URL of the deployed API.
 3. Start Postgres and Hindsight (Hindsight UI: http://localhost:9999). Hindsight exits on startup if `HINDSIGHT_LLM_API_KEY` is empty; `pnpm infra:logs` shows why.
    ```bash
    pnpm infra:up
@@ -50,11 +51,11 @@ Needs Node 22+, pnpm, and Docker.
 
 ## Useful commands
 
-| Command | What it does |
-|---|---|
-| `pnpm seed --reset` | Wipe Postgres + Hindsight banks and seed again |
-| `pnpm upload <client> 4 --replace` | Delete round 4 (and its memories) and upload it again, for demo rehearsal |
-| `pnpm --filter @recidivist/api check-data` | Validate `data/` and preview exact-match verdicts |
-| `pnpm --filter @recidivist/core test` | Unit tests for the verdict rules |
-| `pnpm typecheck` | Type-check every package |
-| `pnpm db:studio` | Browse the Postgres tables |
+| Command                                    | What it does                                                              |
+| ------------------------------------------ | ------------------------------------------------------------------------- |
+| `pnpm seed --reset`                        | Wipe Postgres + Hindsight banks and seed again                            |
+| `pnpm upload <client> 4 --replace`         | Delete round 4 (and its memories) and upload it again, for demo rehearsal |
+| `pnpm --filter @recidivist/api check-data` | Validate `data/` and preview exact-match verdicts                         |
+| `pnpm --filter @recidivist/core test`      | Unit tests for the verdict rules                                          |
+| `pnpm typecheck`                           | Type-check every package                                                  |
+| `pnpm db:studio`                           | Browse the Postgres tables                                                |
